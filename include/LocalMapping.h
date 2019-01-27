@@ -29,7 +29,6 @@
 
 #include <mutex>
 
-
 namespace ORB_SLAM2
 {
 
@@ -39,12 +38,12 @@ class Map;
 
 class LocalMapping
 {
-public:
-    ConfigParam* mpParams;
+  public:
+    ConfigParam *mpParams;
 
     // KeyFrames in Local Window, for Local BA
     // Insert in ProcessNewKeyFrame()
-    void AddToLocalWindow(KeyFrame* pKF);
+    void AddToLocalWindow(KeyFrame *pKF);
     void DeleteBadInLocalWindow(void);
 
     bool TryInitVIO(void);
@@ -59,9 +58,9 @@ public:
 
     bool GetMapUpdateFlagForTracking();
     void SetMapUpdateFlagInTracking(bool bflag);
-    KeyFrame* GetMapUpdateKF();
+    KeyFrame *GetMapUpdateKF();
 
-protected:
+  protected:
     double mnStartTime;
     bool mbFirstTry;
     double mnVINSInitScale;
@@ -74,23 +73,23 @@ protected:
     bool mbFirstVINSInited;
 
     unsigned int mnLocalWindowSize;
-    std::list<KeyFrame*> mlLocalKeyFrames;
+    std::list<KeyFrame *> mlLocalKeyFrames;
 
     std::mutex mMutexMapUpdateFlag;
     bool mbMapUpdateFlagForTracking;
-    KeyFrame* mpMapUpdateKF;
+    KeyFrame *mpMapUpdateKF;
 
-public:
-    LocalMapping(Map* pMap, const float bMonocular, ConfigParam* pParams);
+  public:
+    LocalMapping(Map *pMap, const float bMonocular, ConfigParam *pParams);
 
-    void SetLoopCloser(LoopClosing* pLoopCloser);
+    void SetLoopCloser(LoopClosing *pLoopCloser);
 
-    void SetTracker(Tracking* pTracker);
+    void SetTracker(Tracking *pTracker);
 
     // Main function
     void Run();
 
-    void InsertKeyFrame(KeyFrame* pKF);
+    void InsertKeyFrame(KeyFrame *pKF);
 
     // Thread Synch
     void RequestStop();
@@ -108,13 +107,13 @@ public:
     void RequestFinish();
     bool isFinished();
 
-    int KeyframesInQueue(){
+    int KeyframesInQueue()
+    {
         unique_lock<std::mutex> lock(mMutexNewKFs);
         return mlNewKeyFrames.size();
     }
 
-protected:
-
+  protected:
     bool CheckNewKeyFrames();
     void ProcessNewKeyFrame();
     void CreateNewMapPoints();
@@ -124,7 +123,7 @@ protected:
 
     void KeyFrameCulling();
 
-    cv::Mat ComputeF12(KeyFrame* &pKF1, KeyFrame* &pKF2);
+    cv::Mat ComputeF12(KeyFrame *&pKF1, KeyFrame *&pKF2);
 
     cv::Mat SkewSymmetricMatrix(const cv::Mat &v);
 
@@ -140,16 +139,16 @@ protected:
     bool mbFinished;
     std::mutex mMutexFinish;
 
-    Map* mpMap;
+    Map *mpMap;
 
-    LoopClosing* mpLoopCloser;
-    Tracking* mpTracker;
+    LoopClosing *mpLoopCloser;
+    Tracking *mpTracker;
 
-    std::list<KeyFrame*> mlNewKeyFrames;
+    std::list<KeyFrame *> mlNewKeyFrames;
 
-    KeyFrame* mpCurrentKeyFrame;
+    KeyFrame *mpCurrentKeyFrame;
 
-    std::list<MapPoint*> mlpRecentAddedMapPoints;
+    std::list<MapPoint *> mlpRecentAddedMapPoints;
 
     std::mutex mMutexNewKFs;
 
@@ -164,6 +163,6 @@ protected:
     std::mutex mMutexAccept;
 };
 
-} //namespace ORB_SLAM
+} // namespace ORB_SLAM2
 
 #endif // LOCALMAPPING_H

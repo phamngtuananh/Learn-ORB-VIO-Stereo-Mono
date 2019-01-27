@@ -32,25 +32,23 @@ float Frame::cx, Frame::cy, Frame::fx, Frame::fy, Frame::invfx, Frame::invfy;
 float Frame::mnMinX, Frame::mnMinY, Frame::mnMaxX, Frame::mnMaxY;
 float Frame::mfGridElementWidthInv, Frame::mfGridElementHeightInv;
 
-
-
 //-------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------
 
-void Frame::ComputeIMUPreIntSinceLastFrame(const Frame* pLastF, IMUPreintegrator& IMUPreInt) const
+void Frame::ComputeIMUPreIntSinceLastFrame(const Frame *pLastF, IMUPreintegrator &IMUPreInt) const
 {
     // Reset pre-integrator first
     IMUPreInt.reset();
 
-    const std::vector<IMUData>& vIMUSInceLastFrame = mvIMUDataSinceLastFrame;
+    const std::vector<IMUData> &vIMUSInceLastFrame = mvIMUDataSinceLastFrame;
 
     Vector3d bg = pLastF->GetNavState().Get_BiasGyr();
     Vector3d ba = pLastF->GetNavState().Get_BiasAcc();
 
     // remember to consider the gap between the last KF and the first IMU
     {
-        const IMUData& imu = vIMUSInceLastFrame.front();
+        const IMUData &imu = vIMUSInceLastFrame.front();
         double dt = imu._t - pLastF->mTimeStamp;
         IMUPreInt.update(imu._g - bg, imu._a - ba, dt);
 
@@ -58,16 +56,16 @@ void Frame::ComputeIMUPreIntSinceLastFrame(const Frame* pLastF, IMUPreintegrator
         if (dt < 0)
         {
             cerr << std::fixed << std::setprecision(3) << "dt = " << dt << ", this frame vs last imu time: " << pLastF->mTimeStamp << " vs " << imu._t << endl;
-            std::cerr.unsetf ( std::ios::showbase );                // deactivate showbase
+            std::cerr.unsetf(std::ios::showbase); // deactivate showbase
         }
     }
     // integrate each imu
     for (size_t i = 0; i < vIMUSInceLastFrame.size(); i++)
     {
-        const IMUData& imu = vIMUSInceLastFrame[i];
+        const IMUData &imu = vIMUSInceLastFrame[i];
         double nextt;
         if (i == vIMUSInceLastFrame.size() - 1)
-            nextt = mTimeStamp;         // last IMU, next is this KeyFrame
+            nextt = mTimeStamp; // last IMU, next is this KeyFrame
         else
             nextt = vIMUSInceLastFrame[i + 1]._t; // regular condition, next is imu data
 
@@ -80,7 +78,7 @@ void Frame::ComputeIMUPreIntSinceLastFrame(const Frame* pLastF, IMUPreintegrator
         if (dt <= 0)
         {
             cerr << std::fixed << std::setprecision(3) << "frame:dt = " << dt << ", this vs next time: " << imu._t << " vs " << nextt << endl;
-            std::cerr.unsetf ( std::ios::showbase );                // deactivate showbase
+            std::cerr.unsetf(std::ios::showbase); // deactivate showbase
         }
     }
 }
@@ -104,17 +102,17 @@ void Frame::UpdatePoseFromNS(const cv::Mat &Tbc)
     SetPose(Tcw);
 }
 
-void Frame::UpdateNavState(const IMUPreintegrator& imupreint, const Vector3d& gw)
+void Frame::UpdateNavState(const IMUPreintegrator &imupreint, const Vector3d &gw)
 {
     Converter::updateNS(mNavState, imupreint, gw);
 }
 
-const NavState& Frame::GetNavState(void) const
+const NavState &Frame::GetNavState(void) const
 {
     return mNavState;
 }
 
-void Frame::SetInitialNavStateAndBias(const NavState& ns)
+void Frame::SetInitialNavStateAndBias(const NavState &ns)
 {
     mNavState = ns;
     // Set bias as bias+delta_bias, and reset the delta_bias term
@@ -123,7 +121,6 @@ void Frame::SetInitialNavStateAndBias(const NavState& ns)
     mNavState.Set_DeltaBiasGyr(Vector3d::Zero());
     mNavState.Set_DeltaBiasAcc(Vector3d::Zero());
 }
-
 
 void Frame::SetNavStateBiasGyr(const Vector3d &bg)
 {
@@ -135,16 +132,15 @@ void Frame::SetNavStateBiasAcc(const Vector3d &ba)
     mNavState.Set_BiasAcc(ba);
 }
 
-void Frame::SetNavState(const NavState& ns)
+void Frame::SetNavState(const NavState &ns)
 {
     mNavState = ns;
 }
 
-
 //for monocular orbvio
-Frame::Frame(const cv::Mat &imGray, const double &timeStamp, const std::vector<IMUData> &vimu, ORBextractor* extractor, ORBVocabulary* voc,
-             cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame* pLastKF)
-    : mpORBvocabulary(voc), mpORBextractorLeft(extractor), mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
+Frame::Frame(const cv::Mat &imGray, const double &timeStamp, const std::vector<IMUData> &vimu, ORBextractor *extractor, ORBVocabulary *voc,
+             cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame *pLastKF)
+    : mpORBvocabulary(voc), mpORBextractorLeft(extractor), mpORBextractorRight(static_cast<ORBextractor *>(NULL)),
       mTimeStamp(timeStamp), mK(K.clone()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth)
 {
     //this is  the only difference from original novio // Copy IMU data
@@ -176,7 +172,7 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, const std::vector<I
     mvuRight = vector<float>(N, -1);
     mvDepth = vector<float>(N, -1);
 
-    mvpMapPoints = vector<MapPoint*>(N, static_cast<MapPoint*>(NULL));
+    mvpMapPoints = vector<MapPoint *>(N, static_cast<MapPoint *>(NULL));
     mvbOutlier = vector<bool>(N, false);
 
     // This is done only for the first Frame (or after a change in the calibration)
@@ -203,9 +199,9 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, const std::vector<I
 }
 
 //for stereo orbvio
-Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, const std::vector<IMUData> &vimu, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame* pLastKF)
+Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, const std::vector<IMUData> &vimu, ORBextractor *extractorLeft, ORBextractor *extractorRight, ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame *pLastKF)
     : mpORBvocabulary(voc), mpORBextractorLeft(extractorLeft), mpORBextractorRight(extractorRight), mTimeStamp(timeStamp), mK(K.clone()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
-      mpReferenceKF(static_cast<KeyFrame*>(NULL))
+      mpReferenceKF(static_cast<KeyFrame *>(NULL))
 {
     // Copy IMU data
     mvIMUDataSinceLastFrame = vimu;
@@ -237,9 +233,8 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
 
     ComputeStereoMatches();
 
-    mvpMapPoints = vector<MapPoint*>(N, static_cast<MapPoint*>(NULL));
+    mvpMapPoints = vector<MapPoint *>(N, static_cast<MapPoint *>(NULL));
     mvbOutlier = vector<bool>(N, false);
-
 
     // This is done only for the first Frame (or after a change in the calibration)
     if (mbInitialComputations)
@@ -264,20 +259,20 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
     AssignFeaturesToGrid();
 }
 
-
 //-------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------
 
 Frame::Frame()
-{}
+{
+}
 
 //Copy Constructor
 Frame::Frame(const Frame &frame)
     : mpORBvocabulary(frame.mpORBvocabulary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
       mTimeStamp(frame.mTimeStamp), mK(frame.mK.clone()), mDistCoef(frame.mDistCoef.clone()),
       mbf(frame.mbf), mb(frame.mb), mThDepth(frame.mThDepth), N(frame.N), mvKeys(frame.mvKeys),
-      mvKeysRight(frame.mvKeysRight), mvKeysUn(frame.mvKeysUn),  mvuRight(frame.mvuRight),
+      mvKeysRight(frame.mvKeysRight), mvKeysUn(frame.mvKeysUn), mvuRight(frame.mvuRight),
       mvDepth(frame.mvDepth), mBowVec(frame.mBowVec), mFeatVec(frame.mFeatVec),
       mDescriptors(frame.mDescriptors.clone()), mDescriptorsRight(frame.mDescriptorsRight.clone()),
       mvpMapPoints(frame.mvpMapPoints), mvbOutlier(frame.mvbOutlier), mnId(frame.mnId),
@@ -299,10 +294,9 @@ Frame::Frame(const Frame &frame)
     mNavStatePrior = frame.mNavStatePrior;
 }
 
-
-Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth)
+Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor *extractorLeft, ORBextractor *extractorRight, ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth)
     : mpORBvocabulary(voc), mpORBextractorLeft(extractorLeft), mpORBextractorRight(extractorRight), mTimeStamp(timeStamp), mK(K.clone()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
-      mpReferenceKF(static_cast<KeyFrame*>(NULL))
+      mpReferenceKF(static_cast<KeyFrame *>(NULL))
 {
     // Frame ID
     mnId = nNextId++;
@@ -331,9 +325,8 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
 
     ComputeStereoMatches();
 
-    mvpMapPoints = vector<MapPoint*>(N, static_cast<MapPoint*>(NULL));
+    mvpMapPoints = vector<MapPoint *>(N, static_cast<MapPoint *>(NULL));
     mvbOutlier = vector<bool>(N, false);
-
 
     // This is done only for the first Frame (or after a change in the calibration)
     if (mbInitialComputations)
@@ -358,8 +351,8 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
     AssignFeaturesToGrid();
 }
 
-Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth)
-    : mpORBvocabulary(voc), mpORBextractorLeft(extractor), mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
+Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor *extractor, ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth)
+    : mpORBvocabulary(voc), mpORBextractorLeft(extractor), mpORBextractorRight(static_cast<ORBextractor *>(NULL)),
       mTimeStamp(timeStamp), mK(K.clone()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth)
 {
     // Frame ID
@@ -386,7 +379,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
 
     ComputeStereoFromRGBD(imDepth);
 
-    mvpMapPoints = vector<MapPoint*>(N, static_cast<MapPoint*>(NULL));
+    mvpMapPoints = vector<MapPoint *>(N, static_cast<MapPoint *>(NULL));
     mvbOutlier = vector<bool>(N, false);
 
     // This is done only for the first Frame (or after a change in the calibration)
@@ -412,9 +405,8 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     AssignFeaturesToGrid();
 }
 
-
-Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth)
-    : mpORBvocabulary(voc), mpORBextractorLeft(extractor), mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
+Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor *extractor, ORBVocabulary *voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth)
+    : mpORBvocabulary(voc), mpORBextractorLeft(extractor), mpORBextractorRight(static_cast<ORBextractor *>(NULL)),
       mTimeStamp(timeStamp), mK(K.clone()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth)
 {
     // Frame ID
@@ -443,7 +435,7 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
     mvuRight = vector<float>(N, -1);
     mvDepth = vector<float>(N, -1);
 
-    mvpMapPoints = vector<MapPoint*>(N, static_cast<MapPoint*>(NULL));
+    mvpMapPoints = vector<MapPoint *>(N, static_cast<MapPoint *>(NULL));
     mvbOutlier = vector<bool>(N, false);
 
     // This is done only for the first Frame (or after a change in the calibration)
@@ -566,7 +558,7 @@ bool Frame::isInFrustum(MapPoint *pMP, float viewingCosLimit)
     return true;
 }
 
-vector<size_t> Frame::GetFeaturesInArea(const float &x, const float  &y, const float  &r, const int minLevel, const int maxLevel) const
+vector<size_t> Frame::GetFeaturesInArea(const float &x, const float &y, const float &r, const int minLevel, const int maxLevel) const
 {
     vector<size_t> vIndices;
     vIndices.reserve(N);
@@ -633,7 +625,6 @@ bool Frame::PosInGrid(const cv::KeyPoint &kp, int &posX, int &posY)
     return true;
 }
 
-
 void Frame::ComputeBoW()
 {
     if (mBowVec.empty())
@@ -680,10 +671,14 @@ void Frame::ComputeImageBounds(const cv::Mat &imLeft)
     if (mDistCoef.at<float>(0) != 0.0)
     {
         cv::Mat mat(4, 2, CV_32F);
-        mat.at<float>(0, 0) = 0.0; mat.at<float>(0, 1) = 0.0;
-        mat.at<float>(1, 0) = imLeft.cols; mat.at<float>(1, 1) = 0.0;
-        mat.at<float>(2, 0) = 0.0; mat.at<float>(2, 1) = imLeft.rows;
-        mat.at<float>(3, 0) = imLeft.cols; mat.at<float>(3, 1) = imLeft.rows;
+        mat.at<float>(0, 0) = 0.0;
+        mat.at<float>(0, 1) = 0.0;
+        mat.at<float>(1, 0) = imLeft.cols;
+        mat.at<float>(1, 1) = 0.0;
+        mat.at<float>(2, 0) = 0.0;
+        mat.at<float>(2, 1) = imLeft.rows;
+        mat.at<float>(3, 0) = imLeft.cols;
+        mat.at<float>(3, 1) = imLeft.rows;
 
         // Undistort corners
         mat = mat.reshape(2);
@@ -694,7 +689,6 @@ void Frame::ComputeImageBounds(const cv::Mat &imLeft)
         mnMaxX = max(mat.at<float>(1, 0), mat.at<float>(3, 0));
         mnMinY = min(mat.at<float>(0, 1), mat.at<float>(1, 1));
         mnMaxY = max(mat.at<float>(2, 1), mat.at<float>(3, 1));
-
     }
     else
     {
@@ -715,7 +709,7 @@ void Frame::ComputeStereoMatches()
     const int nRows = mpORBextractorLeft->mvImagePyramid[0].rows;
 
     //Assign keypoints to row table
-    vector<vector<size_t> > vRowIndices(nRows, vector<size_t>());
+    vector<vector<size_t>> vRowIndices(nRows, vector<size_t>());
 
     for (int i = 0; i < nRows; i++)
         vRowIndices[i].reserve(200);
@@ -740,7 +734,7 @@ void Frame::ComputeStereoMatches()
     const float maxD = mbf / minZ;
 
     // For each left keypoint search a match in the right image
-    vector<pair<int, int> > vDistIdx;
+    vector<pair<int, int>> vDistIdx;
     vDistIdx.reserve(N);
 
     for (int iL = 0; iL < N; iL++)
@@ -826,7 +820,7 @@ void Frame::ComputeStereoMatches()
                 float dist = cv::norm(IL, IR, cv::NORM_L1);
                 if (dist < bestDist)
                 {
-                    bestDist =  dist;
+                    bestDist = dist;
                     bestincR = incR;
                 }
 
@@ -881,7 +875,6 @@ void Frame::ComputeStereoMatches()
     }
 }
 
-
 void Frame::ComputeStereoFromRGBD(const cv::Mat &imDepth)
 {
     mvuRight = vector<float>(N, -1);
@@ -921,4 +914,4 @@ cv::Mat Frame::UnprojectStereo(const int &i)
         return cv::Mat();
 }
 
-} //namespace ORB_SLAM
+} // namespace ORB_SLAM2
